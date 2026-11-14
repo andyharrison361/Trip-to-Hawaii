@@ -3,7 +3,7 @@
 # Needs a local Postgres; set PGHOST/PGPORT/PGUSER as usual.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-DB="lifepartner_test_$$"
+DB="samepage_test_$$"
 createdb "$DB"
 trap 'dropdb --if-exists "$DB"' EXIT
 run() { psql -q -X -v ON_ERROR_STOP=1 -d "$DB" -o /dev/null -f "$1" 2>&1 | sed -E '/^$/d; s/^psql:[^ ]+ //; s/^NOTICE: +//'; }

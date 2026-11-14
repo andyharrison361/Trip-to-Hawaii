@@ -24,7 +24,7 @@ function OwnerPicker({ people, value, onChange, currentUserId }: { people: Perso
             onClick={() => onChange(v)}
             className={cx(
               "min-h-12 flex-1 rounded-2xl px-3 font-medium ring-1",
-              value === v ? "bg-sage text-white ring-sage" : "bg-canvas ring-line",
+              value === v ? "bg-accent text-white ring-accent" : "bg-canvas ring-line",
             )}
           >
             {p.id === currentUserId ? "Me" : p.firstName}
@@ -76,14 +76,14 @@ export function NewAreaForm({
                       setPicked(i);
                       setError(null);
                     }}
-                    className="flex min-h-16 w-full items-center gap-3 px-4 py-2 text-left active:bg-sage-soft/60"
+                    className="flex min-h-16 w-full items-center gap-3 px-4 py-2 text-left active:bg-accent-soft/60"
                   >
                     <span className="text-2xl">{i.icon}</span>
                     <span className="min-w-0 flex-1">
                       <span className="block font-medium">{i.name}</span>
                       <span className="line-clamp-2 block text-sm text-muted">{i.minimumStandard}</span>
                     </span>
-                    <PlusIcon className="h-5 w-5 text-sage-strong" />
+                    <PlusIcon className="h-5 w-5 text-accent-strong" />
                   </button>
                 </li>
               ))}

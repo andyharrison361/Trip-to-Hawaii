@@ -1,15 +1,16 @@
 import type { MetadataRoute } from "next";
+import { BRAND } from "@/lib/brand";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Life Partner",
-    short_name: "Life Partner",
-    description: "Shared ownership of the household, with the reminding handled for you.",
+    name: BRAND.name,
+    short_name: BRAND.name,
+    description: BRAND.tagline,
     start_url: "/",
     scope: "/",
     display: "standalone",
-    background_color: "#faf7f2",
-    theme_color: "#faf7f2",
+    background_color: BRAND.colors.paper,
+    theme_color: BRAND.colors.paper,
     icons: [
       { src: "/pwa-icon/192", sizes: "192x192", type: "image/png" },
       { src: "/pwa-icon/512", sizes: "512x512", type: "image/png" },

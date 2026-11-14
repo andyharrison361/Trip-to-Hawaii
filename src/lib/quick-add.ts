@@ -1,5 +1,7 @@
-// Quick add: turn one line of text (typed or dictated) into a task draft.
-//   "pay water bill friday"                    -> due Friday
+// Quick add: turn one line of text (typed or dictated) into an item draft.
+//   "pay water bill friday"                    -> task, due Friday
+//   "emma soccer practice tuesday 5pm"         -> event for Emma, Tue 5 PM
+//   "take out the trash every tuesday"         -> chore, weekly
 //   "renew car registration Nov 3 #car"        -> due Nov 3, area Car
 //   "pay credit card monthly on the 20th"      -> repeats monthly on the 20th
 //   "oil change every 6 months after it's done @andy"
@@ -9,6 +11,7 @@
 import * as chrono from "chrono-node";
 import { firstOccurrence, parseRecurrence, type Recurrence } from "./recurrence";
 import { pad, type ISODate } from "./dates";
+import type { ItemKind } from "./types";
 
 export interface QuickAddArea {
   id: string;
@@ -22,16 +25,25 @@ export interface QuickAddMember {
   name: string;
 }
 
+export interface QuickAddKid {
+  id: string;
+  name: string;
+}
+
 export interface QuickAddContext {
   areas: QuickAddArea[];
   members: QuickAddMember[];
+  kids?: QuickAddKid[];
   currentUserId: string;
   /** Current wall-clock time in the household timezone. */
   now: { year: number; month: number; day: number; hour: number; minute: number; date: ISODate };
 }
 
 export interface QuickAddDraft {
+  kind: ItemKind;
   title: string;
+  /** Kids mentioned by name ("Emma's dentist"). Their names stay in the title. */
+  kidIds: string[];
   dueDate: ISODate | null;
   dueTime: string | null;
   recurrence: Recurrence | null;
@@ -117,6 +129,51 @@ function cleanTitle(text: string): string {
   for (let i = 0; i < 4 && dangling.test(t); i++) t = t.replace(dangling, "").trim();
   t = t.replace(/^(?:[-–—,:]\s*)+/, "").replace(/\s+([,.;:!?])/g, "$1").replace(/[\s,;:–—-]+$/, "");
   return t ? t.charAt(0).toUpperCase() + t.slice(1) : "";
+}
+
+// Words that make something an event (it happens at a time) or a chore (a routine job).
+const EVENT_WORDS = [
+  "appointment", "appt", "practice", "game", "match", "tournament", "recital", "rehearsal", "concert",
+  "lesson", "lessons", "class", "meeting", "conference", "party", "birthday party", "dinner", "lunch with",
+  "breakfast with", "brunch", "reservation", "dentist", "doctor", "doctors", "pediatrician", "orthodontist",
+  "checkup", "check-up", "physical", "vet appointment", "flight", "visit", "coming", "comes", "arrives",
+  "arriving", "pickup", "pick up from", "drop off", "dropoff", "playdate", "play date", "sleepover",
+  "field trip", "show", "movie", "date night", "wedding", "funeral", "shower", "camp", "tryouts",
+  "haircut", "inspection", "installation", "delivery", "open house", "parent teacher",
+];
+const CHORE_WORDS = [
+  "trash", "garbage", "recycling", "bins", "compost", "dishes", "dishwasher", "laundry", "fold clothes",
+  "vacuum", "mop", "sweep", "dust", "mow", "lawn", "weed", "rake", "water the plants", "water plants",
+  "clean", "scrub", "tidy", "wipe", "change sheets", "make beds", "litter", "feed the", "walk the dog",
+  "empty", "take out", "put away", "chores", "bathroom", "fridge", "declutter", "iron",
+];
+
+function hasPhrase(text: string, phrases: string[]): boolean {
+  const haystack = ` ${words(text).join(" ")} `;
+  return phrases.some((p) => haystack.includes(` ${words(p).join(" ")} `));
+}
+
+/**
+ * Event if it names an event-like thing and has a date; chore if it names a
+ * household routine; otherwise a task. Always adjustable in the add sheet.
+ */
+export function inferKind(title: string, hasDate: boolean): ItemKind {
+  if (hasDate && hasPhrase(title, EVENT_WORDS)) return "event";
+  if (hasPhrase(title, CHORE_WORDS)) return "chore";
+  return "task";
+}
+
+/** Kids named in the text, as whole words (allowing "Emma's"). */
+function matchKids(text: string, kids: QuickAddKid[]): string[] {
+  const haystack = ` ${text.toLowerCase().replace(/[‘’]/g, "'").replace(/'s\b/g, "")} `;
+  return kids
+    .filter((k) => {
+      const name = k.name.trim().toLowerCase();
+      if (name.length < 2) return false;
+      const re = new RegExp(`[^a-z0-9]${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}[^a-z0-9]`);
+      return re.test(haystack);
+    })
+    .map((k) => k.id);
 }
 
 export function parseQuickAdd(input: string, ctx: QuickAddContext): QuickAddDraft {
@@ -218,7 +275,9 @@ export function parseQuickAdd(input: string, ctx: QuickAddContext): QuickAddDraf
   }
 
   return {
+    kind: inferKind(title, dueDate != null),
     title,
+    kidIds: matchKids(title, ctx.kids ?? []),
     dueDate,
     dueTime,
     recurrence: rec?.recurrence ?? null,

@@ -8,11 +8,14 @@
 // during onboarding.
 
 import type { RecurrenceMode } from "./recurrence";
+import type { ItemKind } from "./types";
 
 export type SuggestedOwner = "me" | "partner";
 
 export interface StarterTask {
   title: string;
+  /** Defaults to "chore" in household-routine areas, otherwise "task". */
+  kind?: ItemKind;
   rule?: string;
   mode?: RecurrenceMode;
   /** First due date = this many days from today (or the rule's next date on/after that day). */
@@ -64,6 +67,7 @@ export const CATEGORIES = [
   { key: "car", label: "Getting around" },
   { key: "pets", label: "Pets" },
   { key: "health", label: "Health" },
+  { key: "kids", label: "Kids" },
   { key: "people", label: "Friends & family" },
   { key: "fun", label: "Travel & fun" },
   { key: "us", label: "Us" },
@@ -364,6 +368,49 @@ export const AREA_CATALOG: AreaTemplate[] = [
     ],
   },
 
+  // ---------------------------------------------------------------- Kids
+  {
+    key: "school",
+    name: "School",
+    icon: "🎒",
+    category: "kids",
+    minimumStandard:
+      "Forms are signed and returned on time. Lunches and backpacks are ready the night before. Days off and school events are in the planner.",
+    keywords: ["school", "homework", "teacher", "field trip", "permission slip", "lunch", "pta", "report card", "bus", "backpack", "school supplies"],
+    starterTasks: [
+      { title: "Check backpacks & school folders", kind: "chore", rule: "FREQ=WEEKLY;BYDAY=SU", mode: "fixed" },
+      { title: "Pack school lunches", kind: "chore", rule: "FREQ=WEEKLY;BYDAY=SU,MO,TU,WE,TH", mode: "fixed", defaultOn: false },
+      { title: "Add the school calendar's days off & events", rule: "FREQ=YEARLY;BYMONTH=8;BYMONTHDAY=15", mode: "fixed" },
+    ],
+  },
+  {
+    key: "kids-activities",
+    name: "Kids' Activities",
+    icon: "⚽",
+    category: "kids",
+    minimumStandard:
+      "Everyone knows who's driving to each practice and game. Sign-ups, fees and gear are handled before the deadline.",
+    keywords: ["practice", "game", "lesson", "lessons", "recital", "tournament", "registration", "uniform", "carpool", "coach", "team", "swim", "soccer", "dance", "piano", "camp", "tryouts"],
+    starterTasks: [
+      { title: "Sort out this week's rides & carpools", rule: "FREQ=WEEKLY;BYDAY=SU", mode: "fixed" },
+      { title: "Check sign-up deadlines for next season", rule: "FREQ=MONTHLY;INTERVAL=3", mode: "fixed", startInDays: 14 },
+    ],
+  },
+  {
+    key: "kids-health",
+    name: "Kids' Health & Care",
+    icon: "🧸",
+    category: "kids",
+    minimumStandard:
+      "Checkups, dentist visits and vaccines happen on time. We always have a sitter we trust and their number handy.",
+    keywords: ["pediatrician", "checkup", "well child", "vaccine", "shots", "babysitter", "sitter", "daycare", "nanny"],
+    starterTasks: [
+      { title: "Book well-child checkups", rule: "FREQ=YEARLY", mode: "after_completion", startInDays: 30 },
+      { title: "Book kids' dentist cleanings", rule: "FREQ=MONTHLY;INTERVAL=6", mode: "after_completion", startInDays: 30 },
+      { title: "Line up a sitter for date night", rule: "FREQ=MONTHLY", mode: "after_completion", startInDays: 10, defaultOn: false },
+    ],
+  },
+
   // ---------------------------------------------------------------- Friends & family
   {
     key: "social",
@@ -476,7 +523,6 @@ export const AREA_CATALOG: AreaTemplate[] = [
     name: "Sales & Marketing",
     icon: "📣",
     category: "business",
-    suggested: true,
     suggestedOwner: "me",
     minimumStandard:
       "Every inquiry gets a reply within one business day. There's a plan for this month's marketing. Leads are followed up, not forgotten.",
@@ -492,7 +538,6 @@ export const AREA_CATALOG: AreaTemplate[] = [
     name: "Orders, Shipping & Customers",
     icon: "📦",
     category: "business",
-    suggested: true,
     suggestedOwner: "me",
     minimumStandard:
       "Every order has a ship-by date and the customer knows it. Orders ship on time with tracking sent. Customer messages get answered within a day.",
@@ -523,7 +568,6 @@ export const AREA_CATALOG: AreaTemplate[] = [
     name: "Builder & Production",
     icon: "🪚",
     category: "business",
-    suggested: true,
     suggestedOwner: "me",
     minimumStandard:
       "The builder always knows what's next and when it's due. We check in weekly on every build in progress. Quality issues are raised right away.",
@@ -535,7 +579,6 @@ export const AREA_CATALOG: AreaTemplate[] = [
     name: "Cushion Sewing",
     icon: "🧵",
     category: "business",
-    suggested: true,
     suggestedOwner: "me",
     minimumStandard:
       "Cushions are cut, sewn and assembled before the piece is ready to ship. Assembly is a tag-team; whoever owns this does most of the sewing.",
@@ -547,7 +590,6 @@ export const AREA_CATALOG: AreaTemplate[] = [
     name: "Cushion Materials",
     icon: "🪡",
     category: "business",
-    suggested: true,
     suggestedOwner: "partner",
     minimumStandard:
       "Fabric, foam and notions are always on hand for the next two orders. Reorders go in before we run low, not after.",
@@ -559,7 +601,6 @@ export const AREA_CATALOG: AreaTemplate[] = [
     name: "Social Media",
     icon: "📸",
     category: "business",
-    suggested: true,
     suggestedOwner: "partner",
     minimumStandard: "We post consistently, a couple of times a week, and comments and DMs get a reply.",
     keywords: ["instagram", "post", "posts", "social media", "tiktok", "pinterest", "reel", "photo shoot", "content"],
@@ -573,7 +614,6 @@ export const AREA_CATALOG: AreaTemplate[] = [
     name: "Product Design",
     icon: "✏️",
     category: "business",
-    suggested: true,
     suggestedOwner: "partner",
     minimumStandard: "Design decisions, specs and drawings for the builder are current. New ideas get captured and reviewed each quarter.",
     keywords: ["design", "sketch", "prototype", "spec", "drawing", "finish", "stain", "colorway"],
@@ -584,7 +624,6 @@ export const AREA_CATALOG: AreaTemplate[] = [
     name: "Business Books & Taxes",
     icon: "📒",
     category: "business",
-    suggested: true,
     suggestedOwner: "me",
     minimumStandard:
       "Books are reconciled every month. Estimated taxes are paid on time. Receipts are saved. Business and personal money stay separate.",
@@ -605,6 +644,13 @@ export const AREA_CATALOG: AreaTemplate[] = [
 ];
 
 export const CATALOG_BY_KEY = new Map(AREA_CATALOG.map((a) => [a.key, a]));
+
+/** Areas whose starter tasks are household routines. */
+const CHORE_AREAS = new Set(["cleaning", "laundry", "dishes", "trash", "yard", "declutter"]);
+
+export function starterKind(templateKey: string | null | undefined, task: StarterTask): ItemKind {
+  return task.kind ?? (templateKey && CHORE_AREAS.has(templateKey) ? "chore" : "task");
+}
 
 export function keywordsFor(templateKey: string | null | undefined): string[] {
   return (templateKey && CATALOG_BY_KEY.get(templateKey)?.keywords) || [];

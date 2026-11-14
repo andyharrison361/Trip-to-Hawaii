@@ -96,3 +96,27 @@ export const XIcon = (p: IconProps) => (
     <path d="M6 6l12 12M18 6L6 18" />
   </Svg>
 );
+export const PinIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0113 0c0 5.4-6.5 11-6.5 11z" />
+    <circle cx="12" cy="10" r="2.3" />
+  </Svg>
+);
+export const BroomIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M19 3l-6.5 6.5M9.5 10.5l4 4M8 12c-2 1-4.5 1.2-5 4.5 2.5 2.5 4 4 4 4 3.3-.5 3.5-3 4.5-5" />
+    <path d="M5.5 18l2-2M8 20l1.5-1.5" />
+  </Svg>
+);
+export const ClockIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="M12 7.5V12l3 2" />
+  </Svg>
+);
+export const WeekIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="3.5" y="5" width="17" height="15.5" rx="3" />
+    <path d="M3.5 10h17M8 3v4M16 3v4M9 10v10.5M15 10v10.5" />
+  </Svg>
+);

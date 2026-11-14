@@ -56,7 +56,7 @@ export function AreaPicker({
               {items.map((item) => {
                 const owner = picked[item.key];
                 return (
-                  <li key={item.key} className={cx("rounded-3xl ring-1 transition", owner ? "bg-card ring-sage/40" : "bg-card/60 ring-line")}>
+                  <li key={item.key} className={cx("rounded-3xl ring-1 transition", owner ? "bg-card ring-accent/40" : "bg-card/60 ring-line")}>
                     <button type="button" onClick={() => toggle(item)} className="flex min-h-16 w-full items-center gap-3 px-4 py-2 text-left">
                       <span className="text-2xl">{item.icon}</span>
                       <span className="min-w-0 flex-1">
@@ -66,7 +66,7 @@ export function AreaPicker({
                       <span
                         className={cx(
                           "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2",
-                          owner ? "border-sage bg-sage text-white" : "border-muted/40",
+                          owner ? "border-accent bg-accent text-white" : "border-muted/40",
                         )}
                       >
                         {owner && <CheckIcon className="h-4 w-4" />}
@@ -81,7 +81,7 @@ export function AreaPicker({
                             onClick={() => setPicked((p) => ({ ...p, [item.key]: who }))}
                             className={cx(
                               "min-h-11 rounded-xl text-[0.95rem]",
-                              owner === who ? "bg-sage font-medium text-white" : "bg-canvas text-muted ring-1 ring-line",
+                              owner === who ? "bg-accent font-medium text-white" : "bg-canvas text-muted ring-1 ring-line",
                             )}
                           >
                             {who === "me" ? me.firstName : partner.firstName}

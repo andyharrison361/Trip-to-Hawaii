@@ -77,6 +77,21 @@ export function upcomingOccurrences(rule: string, from: ISODate, count = 3): ISO
   return out;
 }
 
+/**
+ * Dates of a rule anchored at `anchor`, between `from` and `to` (inclusive).
+ * Capped so a runaway rule (e.g. daily for years) can't stall a page.
+ */
+export function occurrencesBetween(rule: string, anchor: ISODate, from: ISODate, to: ISODate, cap = 400): ISODate[] {
+  if (to < from) return [];
+  const r = buildRule(rule, anchor);
+  const out: ISODate[] = [];
+  r.between(toUTCDate(from), toUTCDate(to), true, (date, i) => {
+    out.push(fromUTCDate(date));
+    return i + 1 < cap;
+  });
+  return out;
+}
+
 // ---------------------------------------------------------------------------
 // Describing rules
 // ---------------------------------------------------------------------------

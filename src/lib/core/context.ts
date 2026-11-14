@@ -4,7 +4,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { DEFAULT_TIMEZONE, nowInTimeZone, type ISODate } from "@/lib/dates";
-import type { AreaRow, HouseholdRow, Member, ProfileRow } from "@/lib/types";
+import type { AreaRow, HouseholdRow, KidRow, Member, ProfileRow } from "@/lib/types";
 
 export interface Ctx {
   db: SupabaseClient;
@@ -18,6 +18,7 @@ export interface HouseholdSnapshot {
   me: ProfileRow;
   members: Member[];
   areas: AreaRow[];
+  kids: KidRow[];
   today: ISODate;
   now: ReturnType<typeof nowInTimeZone>;
 }
@@ -57,7 +58,7 @@ export async function findHousehold(
 
 export async function loadSnapshot(ctx: Ctx): Promise<HouseholdSnapshot> {
   const { db, householdId, userId } = ctx;
-  const [householdRes, membersRes, areasRes, inviteRes] = await Promise.all([
+  const [householdRes, membersRes, areasRes, inviteRes, kidsRes] = await Promise.all([
     db.from("households").select("id, name, timezone, max_members").eq("id", householdId).single(),
     db.from("household_members").select("user_id, joined_at").eq("household_id", householdId).order("joined_at"),
     db
@@ -76,8 +77,10 @@ export async function loadSnapshot(ctx: Ctx): Promise<HouseholdSnapshot> {
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    db.from("kids").select("*").eq("household_id", householdId).order("sort_order").order("created_at"),
   ]);
   if (householdRes.error) throw householdRes.error;
+  if (kidsRes.error) throw kidsRes.error;
   if (membersRes.error) throw membersRes.error;
   if (areasRes.error) throw areasRes.error;
 
@@ -109,6 +112,7 @@ export async function loadSnapshot(ctx: Ctx): Promise<HouseholdSnapshot> {
     me,
     members,
     areas: (areasRes.data ?? []) as AreaRow[],
+    kids: (kidsRes.data ?? []) as KidRow[],
     today: now.date,
     now,
   };

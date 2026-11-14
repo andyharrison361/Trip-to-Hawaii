@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { addDays, isValidISODate, nowInTimeZone, type ISODate } from "@/lib/dates";
 import { firstOccurrence } from "@/lib/recurrence";
-import { AREA_CATALOG, CATALOG_BY_KEY, type StarterTask } from "@/lib/catalog";
+import { AREA_CATALOG, CATALOG_BY_KEY, starterKind, type StarterTask } from "@/lib/catalog";
 import type { AreaRow } from "@/lib/types";
 import { ValidationError, type Ctx } from "./context";
 
@@ -144,6 +144,7 @@ export async function createStarterTasks(ctx: Ctx, picks: StarterPick[]): Promis
         id,
         household_id: ctx.householdId,
         area_id: area.id,
+        kind: starterKind(area.template_key as string | null, task),
         title: task.title,
         notes: task.notes ?? "",
         assignee_id: area.owner_id,

@@ -28,7 +28,7 @@ export function HandOffButton({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-sage-strong active:bg-sage-soft"
+        className="inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-accent-strong active:bg-accent-soft"
       >
         <HandoffIcon className="h-5 w-5" /> Hand off
       </button>
@@ -95,7 +95,7 @@ export function BundleButton({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex min-h-12 items-center gap-2 rounded-2xl bg-sage-soft px-4 font-medium text-sage-strong active:brightness-95"
+        className="inline-flex min-h-12 items-center gap-2 rounded-2xl bg-accent-soft px-4 font-medium text-accent-strong active:brightness-95"
       >
         <PlusIcon className="h-5 w-5" /> {bundle.label}
       </button>
@@ -148,7 +148,7 @@ export function SuggestionRow({ areaId, index, title, detail }: { areaId: string
             toast({ message: res.ok ? `Added “${title}”` : res.error });
           })
         }
-        className="inline-flex min-h-11 items-center gap-1 rounded-full bg-sage-soft px-3 text-sm font-medium text-sage-strong disabled:opacity-50"
+        className="inline-flex min-h-11 items-center gap-1 rounded-full bg-accent-soft px-3 text-sm font-medium text-accent-strong disabled:opacity-50"
       >
         <PlusIcon className="h-4 w-4" /> Add
       </button>

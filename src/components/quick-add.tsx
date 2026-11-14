@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { parseQuickAdd } from "@/lib/quick-add";
 import { describeRecurrence, type Recurrence } from "@/lib/recurrence";
 import { formatDue, formatTime, nowInTimeZone } from "@/lib/dates";
+import { kidColor } from "@/lib/colors";
+import type { ItemKind } from "@/lib/types";
 import { createTaskAction } from "@/app/actions";
 import { OPEN_QUICK_ADD } from "./bottom-nav";
 import { useToast } from "./toast";
@@ -14,11 +16,14 @@ import { cx } from "./ui";
 export interface QuickAddProps {
   areas: { id: string; name: string; icon: string | null; ownerId: string | null; keywords: string[] }[];
   members: { id: string | null; firstName: string; pending?: boolean }[];
+  kids: { id: string; name: string; color: string }[];
   currentUserId: string;
   timezone: string;
 }
 
 type Overrides = {
+  kind?: ItemKind;
+  kidIds?: string[];
   areaId?: string | null;
   assigneeId?: string | null;
   dueDate?: string | null;
@@ -28,7 +33,13 @@ type Overrides = {
 
 const PENDING = "__pending__";
 
-export function QuickAdd({ areas, members, currentUserId, timezone }: QuickAddProps) {
+const KINDS: { kind: ItemKind; label: string }[] = [
+  { kind: "event", label: "Event" },
+  { kind: "task", label: "Task" },
+  { kind: "chore", label: "Chore" },
+];
+
+export function QuickAdd({ areas, members, kids, currentUserId, timezone }: QuickAddProps) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [overrides, setOverrides] = useState<Overrides>({});
@@ -56,13 +67,16 @@ export function QuickAdd({ areas, members, currentUserId, timezone }: QuickAddPr
         currentUserId,
         now: nowInTimeZone(timezone),
         members: realMembers.map((m) => ({ id: m.id!, name: m.firstName })),
+        kids,
         areas,
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [text, areas, currentUserId, timezone],
+    [text, areas, kids, currentUserId, timezone],
   );
 
   const value = {
+    kind: overrides.kind ?? draft.kind,
+    kidIds: overrides.kidIds ?? draft.kidIds,
     areaId: "areaId" in overrides ? overrides.areaId! : draft.areaId,
     dueDate: "dueDate" in overrides ? overrides.dueDate! : draft.dueDate,
     dueTime: "dueTime" in overrides ? overrides.dueTime! : draft.dueTime,
@@ -92,16 +106,18 @@ export function QuickAdd({ areas, members, currentUserId, timezone }: QuickAddPr
     setError(null);
     startTransition(async () => {
       const res = await createTaskAction({
+        kind: value.kind,
+        kidIds: value.kidIds,
         title: draft.title,
         areaId: value.areaId,
         assigneeId: value.assigneeId,
         dueDate: value.dueDate,
         dueTime: value.dueTime,
         recurrence: value.recurrence?.rule ?? null,
-        recurrenceMode: value.recurrence?.mode ?? "fixed",
+        recurrenceMode: value.kind === "event" ? "fixed" : (value.recurrence?.mode ?? "fixed"),
       });
       if (!res.ok) {
-        setError(res.error);
+        setError(res.error === "Events need a date" ? "Pick a date for this event (tap 📅 No date)." : res.error);
         return;
       }
       const due = res.data.due_date ? ` · ${formatDue(res.data.due_date, res.data.due_time, now.date)}` : "";
@@ -117,11 +133,11 @@ export function QuickAdd({ areas, members, currentUserId, timezone }: QuickAddPr
 
   const chip =
     "inline-flex min-h-10 items-center gap-1.5 rounded-full bg-canvas px-3 text-[0.95rem] ring-1 ring-line";
-  const chipActive = "bg-sage-soft text-sage-strong ring-sage/30";
+  const chipActive = "bg-accent-soft text-accent-strong ring-accent/30";
 
   return (
     <div
-      className={cx("fixed inset-0 z-50", open ? "" : "pointer-events-none")}
+      className={cx("fixed inset-0 z-50 lg:flex lg:items-start lg:justify-center lg:pt-[12vh]", open ? "" : "pointer-events-none")}
       aria-hidden={!open}
     >
       <div
@@ -132,21 +148,23 @@ export function QuickAdd({ areas, members, currentUserId, timezone }: QuickAddPr
         onSubmit={submit}
         className={cx(
           "pb-safe absolute inset-x-0 bottom-0 rounded-t-[2rem] bg-card px-4 pt-3 shadow-2xl transition-transform duration-200",
+          // On a computer: a centered card instead of a bottom sheet.
+          "lg:relative lg:inset-auto lg:w-full lg:max-w-xl lg:rounded-[2rem] lg:px-6 lg:pt-5",
           // Kept mounted (just moved off-screen) so the input can take focus within the tap.
-          open ? "translate-y-0 opacity-100" : "translate-y-[110%] opacity-0",
+          open ? "translate-y-0 opacity-100" : "translate-y-[110%] opacity-0 lg:translate-y-4",
         )}
       >
-        <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-line" />
+        <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-line lg:hidden" />
         <div className="flex items-center gap-2">
           <input
             ref={inputRef}
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Pay water bill Friday #finances"
+            placeholder={kids[0] ? `${kids[0].name} soccer practice Tue 5pm` : "Plumber coming Thursday 10am"}
             enterKeyHint="done"
             autoComplete="off"
             autoCapitalize="sentences"
-            className="min-h-14 flex-1 rounded-2xl bg-canvas px-4 text-[1.1rem] ring-1 ring-line focus:outline-none focus:ring-2 focus:ring-sage"
+            className="min-h-14 flex-1 rounded-2xl bg-canvas px-4 text-[1.1rem] ring-1 ring-line focus:outline-none focus:ring-2 focus:ring-accent"
           />
           <button
             type="button"
@@ -156,6 +174,24 @@ export function QuickAdd({ areas, members, currentUserId, timezone }: QuickAddPr
           >
             <XIcon />
           </button>
+        </div>
+
+        <div className="mt-3 grid grid-cols-3 gap-1 rounded-2xl bg-canvas p-1 ring-1 ring-line" role="radiogroup" aria-label="Kind">
+          {KINDS.map((k) => (
+            <button
+              key={k.kind}
+              type="button"
+              role="radio"
+              aria-checked={value.kind === k.kind}
+              onClick={() => setOverrides((o) => ({ ...o, kind: k.kind }))}
+              className={cx(
+                "min-h-10 rounded-xl text-[0.95rem]",
+                value.kind === k.kind ? "bg-card font-medium shadow-sm ring-1 ring-line" : "text-muted",
+              )}
+            >
+              {k.label}
+            </button>
+          ))}
         </div>
 
         <div className="mt-3 flex flex-wrap gap-2">
@@ -230,6 +266,27 @@ export function QuickAdd({ areas, members, currentUserId, timezone }: QuickAddPr
               ))}
             </select>
           </label>
+          {/* Kids */}
+          {kids.map((k) => {
+            const on = value.kidIds.includes(k.id);
+            return (
+              <button
+                key={k.id}
+                type="button"
+                aria-pressed={on}
+                onClick={() =>
+                  setOverrides((o) => ({
+                    ...o,
+                    kidIds: on ? value.kidIds.filter((id) => id !== k.id) : [...value.kidIds, k.id],
+                  }))
+                }
+                className={cx(chip, on && cx(kidColor(k.color).soft, "ring-transparent font-medium"))}
+              >
+                <span className={cx("h-2.5 w-2.5 rounded-full", kidColor(k.color).dot)} />
+                {k.name}
+              </button>
+            );
+          })}
           {/* Repeat */}
           {value.recurrence && (
             <button
@@ -249,12 +306,12 @@ export function QuickAdd({ areas, members, currentUserId, timezone }: QuickAddPr
 
         <div className="mt-4 flex items-center justify-between gap-3 pb-4">
           <p className="text-sm leading-snug text-muted">
-            Try “every month on the 20th”, “#car”, “@{realMembers.find((m) => m.id !== currentUserId)?.firstName.toLowerCase() ?? "name"}”
+            Try “every Tuesday”, “#car”, “@{realMembers.find((m) => m.id !== currentUserId)?.firstName.toLowerCase() ?? "name"}”
           </p>
           <button
             type="submit"
             disabled={pending || !draft.title.trim()}
-            className="min-h-12 shrink-0 rounded-2xl bg-sage px-6 font-semibold text-white active:bg-sage-strong disabled:opacity-40"
+            className="min-h-12 shrink-0 rounded-2xl bg-accent px-6 font-semibold text-white active:bg-accent-strong disabled:opacity-40"
           >
             {pending ? "Adding…" : "Add"}
           </button>

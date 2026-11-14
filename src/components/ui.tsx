@@ -1,6 +1,7 @@
 // Shared UI building blocks.
 
 import Link from "next/link";
+import { kidColor } from "@/lib/colors";
 import { ChevronLeftIcon } from "./icons";
 
 export function cx(...classes: (string | false | null | undefined)[]) {
@@ -26,7 +27,7 @@ export function PageHeader({
     <header className="pt-safe">
       <div className="flex min-h-12 items-center justify-between pt-3">
         {back ? (
-          <Link href={back} className="-ml-2 flex h-11 items-center gap-1 rounded-full px-2 text-sage-strong active:bg-sage-soft">
+          <Link href={back} className="-ml-2 flex h-11 items-center gap-1 rounded-full px-2 text-accent-strong active:bg-accent-soft">
             <ChevronLeftIcon className="h-5 w-5" />
             <span>Back</span>
           </Link>
@@ -51,9 +52,9 @@ export function SectionTitle({ children, aside }: { children: React.ReactNode; a
 }
 
 const buttonStyles = {
-  primary: "bg-sage text-white active:bg-sage-strong disabled:opacity-50",
-  secondary: "bg-sage-soft text-sage-strong active:brightness-95 disabled:opacity-50",
-  ghost: "text-sage-strong active:bg-sage-soft disabled:opacity-50",
+  primary: "bg-accent text-white active:bg-accent-strong disabled:opacity-50",
+  secondary: "bg-accent-soft text-accent-strong active:brightness-95 disabled:opacity-50",
+  ghost: "text-accent-strong active:bg-accent-soft disabled:opacity-50",
   danger: "text-clay active:bg-clay-soft disabled:opacity-50",
 };
 
@@ -74,7 +75,7 @@ export function Button({
 }
 
 export const inputClass =
-  "block min-h-12 w-full rounded-2xl border-0 bg-canvas px-4 py-3 text-ink ring-1 ring-line placeholder:text-muted/70 focus:outline-none focus:ring-2 focus:ring-sage";
+  "block min-h-12 w-full rounded-2xl border-0 bg-canvas px-4 py-3 text-ink ring-1 ring-line placeholder:text-muted/70 focus:outline-none focus:ring-2 focus:ring-accent";
 
 export function Field({ label, hint, children }: { label: string; hint?: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -86,7 +87,7 @@ export function Field({ label, hint, children }: { label: string; hint?: React.R
   );
 }
 
-const TONES = ["bg-sage-soft text-sage-strong", "bg-clay-soft text-clay"];
+const TONES = ["bg-accent-soft text-accent-strong", "bg-clay-soft text-clay"];
 
 export function Avatar({
   initial,
@@ -138,4 +139,42 @@ export function PageSkeleton() {
       </div>
     </div>
   );
+}
+
+/** The Same Page mark: two planner pages, one resting on the other. */
+export function BrandMark({ className }: { className?: string }) {
+  return (
+    <span className={cx("relative inline-flex shrink-0 items-center justify-center rounded-[28%] bg-accent", className ?? "h-10 w-10")}>
+      <span className="absolute left-[22%] top-[24%] h-[52%] w-[36%] -rotate-[9deg] rounded-[12%] bg-[#e9dcc4]" />
+      <span className="absolute left-[40%] top-[20%] flex h-[52%] w-[36%] rotate-[6deg] flex-col gap-[9%] rounded-[12%] bg-[#f5efe3] px-[6%] pt-[10%]">
+        <span className="h-[8%] w-[70%] rounded-full bg-highlight" />
+        <span className="h-[8%] w-[85%] rounded-full bg-ink/20" />
+        <span className="h-[8%] w-[60%] rounded-full bg-ink/20" />
+      </span>
+    </span>
+  );
+}
+
+export function Wordmark({ className }: { className?: string }) {
+  return (
+    <span className={cx("inline-flex items-center gap-2", className)}>
+      <BrandMark className="h-8 w-8" />
+      <span className="font-display text-xl font-semibold tracking-tight">Same Page</span>
+    </span>
+  );
+}
+
+export type KidTag = { id: string; name: string; color: string };
+
+/** A kid's name in their color, like a sticker on a planner page. */
+export function KidChip({ kid, className }: { kid: KidTag; className?: string }) {
+  return (
+    <span className={cx("inline-flex items-center rounded-full px-2 py-px text-[0.75rem] font-medium leading-5", kidColor(kid.color).soft, className)}>
+      {kid.name}
+    </span>
+  );
+}
+
+export function KidDot({ color, className }: { color: string; className?: string }) {
+  return <span className={cx("inline-block h-2 w-2 shrink-0 rounded-full", kidColor(color).dot, className)} />;
 }

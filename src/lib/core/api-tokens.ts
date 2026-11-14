@@ -4,7 +4,7 @@ import { createHash, randomBytes } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Ctx } from "./context";
 
-export const TOKEN_PREFIX = "lp_";
+export const TOKEN_PREFIX = "sp_";
 
 export function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");

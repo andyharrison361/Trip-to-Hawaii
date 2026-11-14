@@ -37,16 +37,40 @@ export interface AreaRow {
 
 export type TaskStatus = "open" | "done" | "skipped";
 
+/**
+ * What kind of item this is:
+ * - task: a one-off to-do (may repeat, like a monthly bill)
+ * - chore: a household routine (trash night, laundry, mowing)
+ * - event: happens at a time and place (practice, dentist, plumber visit).
+ *   Events aren't checked off; repeating events show every occurrence.
+ */
+export type ItemKind = "task" | "chore" | "event";
+
+export const ITEM_KINDS: ItemKind[] = ["event", "task", "chore"];
+
+export interface KidRow {
+  id: string;
+  household_id: string;
+  name: string;
+  color: string;
+  birthday: ISODate | null;
+  sort_order: number;
+}
+
 export interface TaskRow {
   id: string;
   household_id: string;
   area_id: string | null;
+  kind: ItemKind;
   title: string;
   notes: string;
+  location: string;
+  kid_ids: string[];
   assignee_id: string | null;
   created_by: string | null;
   due_date: ISODate | null;
   due_time: string | null;
+  end_time: string | null;
   remind_days_before: number | null;
   reminder_time: string | null;
   recurrence: string | null;
@@ -80,4 +104,4 @@ export interface Member {
 }
 
 export const TASK_COLUMNS =
-  "id, household_id, area_id, title, notes, assignee_id, created_by, due_date, due_time, remind_days_before, reminder_time, recurrence, recurrence_mode, series_id, status, completed_at, completed_by, created_at, updated_at";
+  "id, household_id, area_id, kind, title, notes, location, kid_ids, assignee_id, created_by, due_date, due_time, end_time, remind_days_before, reminder_time, recurrence, recurrence_mode, series_id, status, completed_at, completed_by, created_at, updated_at";

@@ -52,7 +52,7 @@ async function Area({ params }: { params: PageProps<"/areas/[id]">["params"] }) 
           </span>
         }
         action={
-          <Link href={`/areas/${id}/edit`} className="flex min-h-11 items-center rounded-full px-3 font-medium text-sage-strong active:bg-sage-soft">
+          <Link href={`/areas/${id}/edit`} className="flex min-h-11 items-center rounded-full px-3 font-medium text-accent-strong active:bg-accent-soft">
             Edit
           </Link>
         }
@@ -74,7 +74,7 @@ async function Area({ params }: { params: PageProps<"/areas/[id]">["params"] }) 
         <p className="text-[0.8rem] font-semibold uppercase tracking-[0.08em] text-muted">Minimum standard</p>
         <p className="mt-1 whitespace-pre-line leading-relaxed">
           {area.minimum_standard || (
-            <Link href={`/areas/${id}/edit`} className="text-sage-strong">
+            <Link href={`/areas/${id}/edit`} className="text-accent-strong">
               Write down together what “done” means here.
             </Link>
           )}
@@ -130,7 +130,7 @@ async function Area({ params }: { params: PageProps<"/areas/[id]">["params"] }) 
         <details className="mt-7 rounded-3xl bg-card ring-1 ring-line">
           <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between px-4 text-[0.95rem] text-muted">
             <span>Suggested tasks ({suggestions.length})</span>
-            <span className="text-sage-strong">Show</span>
+            <span className="text-accent-strong">Show</span>
           </summary>
           <ul className="divide-y divide-line border-t border-line px-4">
             {suggestions.map((s) => {
@@ -157,7 +157,7 @@ async function Area({ params }: { params: PageProps<"/areas/[id]">["params"] }) 
           <ul className="divide-y divide-line rounded-3xl bg-card px-4 ring-1 ring-line">
             {done.map((t) => (
               <li key={t.id} className="flex min-h-14 items-center gap-3 py-2">
-                <span className="text-sage">✓</span>
+                <span className="text-accent">✓</span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate">{t.title}</span>
                   <span className="block text-sm text-muted">

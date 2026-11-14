@@ -10,6 +10,7 @@ import { ValidationError } from "@/lib/core/context";
 import * as tasks from "@/lib/core/tasks";
 import * as areas from "@/lib/core/areas";
 import * as apiTokens from "@/lib/core/api-tokens";
+import * as kids from "@/lib/core/kids";
 import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_TIMEZONE } from "@/lib/dates";
 import type { TaskRow } from "@/lib/types";
@@ -117,6 +118,26 @@ export async function handOffAreaAction(areaId: string, toUserId: string, note: 
   });
 }
 
+// ---------------------------------------------------------------- Kids
+
+export async function createKidAction(input: kids.KidInput): Promise<ActionResult<string>> {
+  return run(async () => (await kids.createKids(await getCtx(), [input]))[0].id);
+}
+
+export async function updateKidAction(id: string, input: kids.KidInput): Promise<ActionResult> {
+  return run(async () => {
+    await kids.updateKid(await getCtx(), id, input);
+    return undefined;
+  });
+}
+
+export async function deleteKidAction(id: string): Promise<ActionResult> {
+  return run(async () => {
+    await kids.deleteKid(await getCtx(), id);
+    return undefined;
+  });
+}
+
 // ---------------------------------------------------------------- Household & profile
 
 export async function updateProfileNameAction(name: string): Promise<ActionResult> {
@@ -161,6 +182,7 @@ export async function setupHouseholdAction(input: {
   myName: string;
   householdName: string;
   partnerName: string;
+  kidNames?: string[];
 }): Promise<ActionResult<string>> {
   return run(async () => {
     const user = await getSessionUser();
@@ -185,6 +207,14 @@ export async function setupHouseholdAction(input: {
       p_invitee_name: input.partnerName.trim() || null,
     });
     if (inviteError) throw inviteError;
+
+    const kidNames = (input.kidNames ?? []).slice(0, 12);
+    if (kidNames.length) {
+      await kids.createKids(
+        { db: user.db, userId: user.userId, householdId: householdId as string, timezone: DEFAULT_TIMEZONE },
+        kidNames.map((name) => ({ name })),
+      );
+    }
     return token as string;
   });
 }

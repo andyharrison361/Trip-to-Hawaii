@@ -136,3 +136,46 @@ describe("vague dates", () => {
     expect(parseQuickAdd("pick up dog food tonight", ctx).dueDate).toBe("2026-10-12");
   });
 });
+
+describe("kinds and kids", () => {
+  const withKids: QuickAddContext = {
+    ...ctx,
+    kids: [
+      { id: "k-emma", name: "Emma" },
+      { id: "k-jake", name: "Jake" },
+      { id: "k-al", name: "Al" },
+    ],
+  };
+
+  it("spots events, chores and plain tasks", () => {
+    expect(parseQuickAdd("soccer practice tuesday 5pm", withKids).kind).toBe("event");
+    expect(parseQuickAdd("dentist appointment Nov 3 at 9:30", withKids).kind).toBe("event");
+    expect(parseQuickAdd("plumber coming thursday 10am", withKids).kind).toBe("event");
+    expect(parseQuickAdd("take out the trash every tuesday", withKids).kind).toBe("chore");
+    expect(parseQuickAdd("fold laundry", withKids).kind).toBe("chore");
+    expect(parseQuickAdd("pay water bill friday", withKids).kind).toBe("task");
+    expect(parseQuickAdd("pick up dry cleaning friday", withKids).kind).toBe("task");
+  });
+
+  it("needs a date before calling something an event", () => {
+    expect(parseQuickAdd("find a piano lesson teacher", withKids).kind).toBe("task");
+  });
+
+  it("tags kids mentioned by name and keeps them in the title", () => {
+    const d = parseQuickAdd("Emma's dentist appointment monday 3pm", withKids);
+    expect(d.kidIds).toEqual(["k-emma"]);
+    expect(d.title).toBe("Emma's dentist appointment");
+    expect(d.kind).toBe("event");
+    expect(d.dueTime).toBe("15:00");
+    expect(parseQuickAdd("emma and jake swim lessons saturday", withKids).kidIds).toEqual(["k-emma", "k-jake"]);
+  });
+
+  it("matches kid names only as whole words", () => {
+    expect(parseQuickAdd("call the alarm company", withKids).kidIds).toEqual([]);
+    expect(parseQuickAdd("Al haircut friday", withKids).kidIds).toEqual(["k-al"]);
+  });
+
+  it("works without any kids set up", () => {
+    expect(parseQuickAdd("Emma's dentist monday", ctx).kidIds).toEqual([]);
+  });
+});

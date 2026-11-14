@@ -1,33 +1,39 @@
 @import "tailwindcss";
 
-/* Calm, warm palette. Sage = primary, clay = gentle "needs attention". */
+/*
+ * Same Page: a warm paper planner.
+ * Paper and ink neutrals, pine-green ink as the accent, terracotta for
+ * "needs attention", a highlighter yellow for today.
+ */
 :root {
-  --canvas: #faf7f2;
-  --card: #ffffff;
-  --ink: #2e2a26;
-  --muted: #7d746b;
-  --line: #ece5db;
-  --sage: #6f8f78;
-  --sage-strong: #557562;
-  --sage-soft: #e8efe9;
-  --clay: #b8704f;
-  --clay-soft: #f7e9e1;
-  --sun-soft: #f6eedb;
+  --canvas: #f5efe3;
+  --card: #fffcf6;
+  --ink: #2e2923;
+  --muted: #80766a;
+  --line: #e6dccb;
+  --accent: #3f6b5b;
+  --accent-strong: #2f5547;
+  --accent-soft: #e3ebe2;
+  --clay: #b45f3c;
+  --clay-soft: #f6e2d5;
+  --sun-soft: #f7ebc4;
+  --highlight: #f3dc8a;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --canvas: #1b1917;
-    --card: #25221f;
-    --ink: #f1ece5;
-    --muted: #a89f95;
-    --line: #37322d;
-    --sage: #8fb099;
-    --sage-strong: #a9c7b2;
-    --sage-soft: #2b3830;
-    --clay: #e09a78;
-    --clay-soft: #43302a;
-    --sun-soft: #3a3326;
+    --canvas: #1c1a17;
+    --card: #262320;
+    --ink: #f1ebe2;
+    --muted: #a99f92;
+    --line: #3a352f;
+    --accent: #8ab5a2;
+    --accent-strong: #a8cbbb;
+    --accent-soft: #263630;
+    --clay: #e39a77;
+    --clay-soft: #45302a;
+    --sun-soft: #3b3424;
+    --highlight: #6b5a24;
   }
 }
 
@@ -37,14 +43,16 @@
   --color-ink: var(--ink);
   --color-muted: var(--muted);
   --color-line: var(--line);
-  --color-sage: var(--sage);
-  --color-sage-strong: var(--sage-strong);
-  --color-sage-soft: var(--sage-soft);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
   --color-clay: var(--clay);
   --color-clay-soft: var(--clay-soft);
   --color-sun-soft: var(--sun-soft);
+  --color-highlight: var(--highlight);
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-display: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-fraunces), "Iowan Old Style", Palatino, Georgia, serif;
+  --font-hand: var(--font-caveat), "Bradley Hand", "Segoe Print", cursive;
 }
 
 html {
@@ -53,7 +61,7 @@ html {
 }
 
 body {
-  background: var(--canvas);
+  background-color: var(--canvas);
   color: var(--ink);
   font-family: var(--font-sans);
   overscroll-behavior-y: none;
@@ -71,6 +79,13 @@ textarea {
 }
 .pt-safe {
   padding-top: env(safe-area-inset-top);
+}
+
+/* A highlighter stroke behind text, like marking today in a paper planner. */
+.highlight {
+  background-image: linear-gradient(transparent 55%, var(--highlight) 55%, var(--highlight) 92%, transparent 92%);
+  padding: 0 0.15em;
+  margin: 0 -0.15em;
 }
 
 @keyframes sheet-up {

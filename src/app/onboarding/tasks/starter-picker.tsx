@@ -48,7 +48,7 @@ export function StarterPicker({ groups }: { groups: Group[] }) {
                     <span
                       className={cx(
                         "flex h-7 w-7 items-center justify-center rounded-lg border-2",
-                        on[k] ? "border-sage bg-sage text-white" : "border-muted/40",
+                        on[k] ? "border-accent bg-accent text-white" : "border-muted/40",
                       )}
                     >
                       {on[k] && <CheckIcon className="h-4 w-4" />}

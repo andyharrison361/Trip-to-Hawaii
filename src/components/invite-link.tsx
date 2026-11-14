@@ -23,7 +23,7 @@ export function InviteLink({ token, inviteeName }: { token: string; inviteeName?
               navigator
                 .share({
                   title: "Join our household",
-                  text: `${inviteeName ? `${inviteeName}, j` : "J"}oin our household on Life Partner:`,
+                  text: `${inviteeName ? `${inviteeName}, j` : "J"}oin our household on Same Page:`,
                   url,
                 })
                 .catch(() => {})

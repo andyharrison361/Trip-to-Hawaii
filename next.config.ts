@@ -1,8 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   cacheComponents: true,
+  async redirects() {
+    // The six-week agenda became the week planner.
+    return [{ source: "/calendar", destination: "/week", permanent: true }];
+  },
   partialPrefetching: true,
   turbopack: {
     rules: {

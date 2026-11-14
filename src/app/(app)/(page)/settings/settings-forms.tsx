@@ -4,12 +4,16 @@ import { useState, useTransition } from "react";
 import {
   createApiTokenAction,
   createInviteAction,
+  createKidAction,
+  deleteKidAction,
+  updateKidAction,
   revokeApiTokenAction,
   updateHouseholdNameAction,
   updateProfileNameAction,
 } from "@/app/actions";
 import { useToast } from "@/components/toast";
-import { Button, Card, ErrorText, Field, inputClass } from "@/components/ui";
+import { Button, Card, ErrorText, Field, cx, inputClass } from "@/components/ui";
+import { KID_COLORS, KID_COLOR_NAMES, kidColor } from "@/lib/colors";
 import { InviteLink } from "@/components/invite-link";
 
 function InlineSave({
@@ -96,7 +100,7 @@ export function TokensCard({ tokens }: { tokens: { id: string; name: string; las
   return (
     <Card className="space-y-4">
       <p className="text-sm text-muted">
-        A personal key lets a Siri Shortcut (or anything else) add tasks for you. See the README for the Shortcut setup. Keep keys private.
+        A personal key lets a Siri Shortcut (or anything else) add things to your planner. Keep keys private.
       </p>
       {newToken && (
         <div className="space-y-2 rounded-2xl bg-sun-soft p-3">
@@ -148,6 +152,125 @@ export function TokensCard({ tokens }: { tokens: { id: string; name: string; las
       >
         Create a key
       </Button>
+    </Card>
+  );
+}
+
+type Kid = { id: string; name: string; color: string };
+
+function ColorPicker({ value, onChange }: { value: string; onChange: (color: string) => void }) {
+  return (
+    <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Color">
+      {KID_COLOR_NAMES.map((c) => (
+        <button
+          key={c}
+          type="button"
+          role="radio"
+          aria-checked={value === c}
+          aria-label={KID_COLORS[c].label}
+          onClick={() => onChange(c)}
+          className={cx(
+            "flex h-10 w-10 items-center justify-center rounded-full ring-1 ring-line",
+            value === c && "ring-2 ring-ink",
+          )}
+        >
+          <span className={cx("h-6 w-6 rounded-full", KID_COLORS[c].dot)} />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function KidRowEditor({ kid }: { kid: Kid }) {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(kid.name);
+  const [color, setColor] = useState(kid.color);
+  const [pending, startTransition] = useTransition();
+  const toast = useToast();
+
+  if (!editing) {
+    return (
+      <li className="flex min-h-12 items-center gap-3">
+        <span className={cx("h-4 w-4 shrink-0 rounded-full", kidColor(kid.color).dot)} />
+        <span className="flex-1">{kid.name}</span>
+        <button type="button" onClick={() => setEditing(true)} className="min-h-11 rounded-full px-3 text-sm text-accent-strong active:bg-accent-soft">
+          Edit
+        </button>
+      </li>
+    );
+  }
+  return (
+    <li className="space-y-3 py-3">
+      <input value={name} onChange={(e) => setName(e.target.value)} className={inputClass} aria-label="Name" />
+      <ColorPicker value={color} onChange={setColor} />
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          className="flex-1"
+          disabled={pending || !name.trim()}
+          onClick={() =>
+            startTransition(async () => {
+              const res = await updateKidAction(kid.id, { name, color: color as keyof typeof KID_COLORS });
+              if (!res.ok) return toast({ message: res.error });
+              setEditing(false);
+            })
+          }
+        >
+          Save
+        </Button>
+        <Button
+          type="button"
+          variant="danger"
+          disabled={pending}
+          onClick={() =>
+            confirm(`Remove ${kid.name}? Anything tagged for ${kid.name} stays on the planner, just untagged.`) &&
+            startTransition(async () => {
+              const res = await deleteKidAction(kid.id);
+              if (!res.ok) toast({ message: res.error });
+            })
+          }
+        >
+          Remove
+        </Button>
+      </div>
+    </li>
+  );
+}
+
+export function KidsCard({ kids }: { kids: Kid[] }) {
+  const [name, setName] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+  return (
+    <Card className="space-y-3">
+      <p className="text-sm text-muted">
+        Kids don&apos;t need an account. Tag practices, appointments and chores with their name, and filter the week to just them.
+      </p>
+      {kids.length > 0 && (
+        <ul className="divide-y divide-line">
+          {kids.map((k) => (
+            <KidRowEditor key={k.id} kid={k} />
+          ))}
+        </ul>
+      )}
+      <form
+        className="flex gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setError(null);
+          startTransition(async () => {
+            const res = await createKidAction({ name });
+            if (!res.ok) return setError(res.error);
+            setName("");
+          });
+        }}
+      >
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Add a child's name" className={inputClass} aria-label="Child's name" />
+        <Button type="submit" variant="secondary" disabled={pending || !name.trim()} className="shrink-0">
+          Add
+        </Button>
+      </form>
+      <ErrorText>{error}</ErrorText>
     </Card>
   );
 }

@@ -22,9 +22,9 @@ export function InstallGuide() {
 
   if (state === "installed") {
     return (
-      <div className="rounded-3xl bg-sage-soft p-5 text-sage-strong">
+      <div className="rounded-3xl bg-accent-soft p-5 text-accent-strong">
         <p className="font-display text-lg font-semibold">You&apos;re all set ✓</p>
-        <p className="mt-1">Life Partner is installed on this phone.</p>
+        <p className="mt-1">Same Page is installed on this phone.</p>
       </div>
     );
   }
@@ -49,12 +49,12 @@ export function InstallGuide() {
             Make sure <strong>Open as Web App</strong> is on, then tap <strong>Add</strong>.
           </>,
           <>
-            Open <strong>Life Partner</strong> from your Home Screen and sign in once more. The home-screen app keeps its own login,
+            Open <strong>Same Page</strong> from your Home Screen and sign in once more. The home-screen app keeps its own login,
             separate from Safari.
           </>,
         ].map((step, i) => (
           <li key={i} className="flex gap-3 rounded-3xl bg-card p-4 ring-1 ring-line">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sage-soft font-semibold text-sage-strong">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-soft font-semibold text-accent-strong">
               {i + 1}
             </span>
             <span className="leading-relaxed">{step}</span>

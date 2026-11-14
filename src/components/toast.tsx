@@ -32,7 +32,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext value={show}>
       {children}
-      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-50 flex justify-center px-4">
+      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-50 lg:bottom-6 lg:pl-60 flex justify-center px-4">
         {toast && (
           <div
             key={toast.id}
@@ -42,7 +42,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             <span className="text-[0.95rem]">{toast.message}</span>
             {toast.actionLabel && (
               <button
-                className="min-h-9 shrink-0 rounded-xl px-2 font-semibold text-sage-soft underline-offset-2 active:underline"
+                className="min-h-9 shrink-0 rounded-xl px-2 font-semibold text-accent-soft underline-offset-2 active:underline"
                 onClick={() => {
                   toast.onAction?.();
                   setToast(null);

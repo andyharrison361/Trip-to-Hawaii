@@ -62,7 +62,7 @@ async function Areas() {
               const owner = a.owner_id ? real.find((m) => m.id === a.owner_id) : snap.members.find((m) => m.pending);
               return (
                 <li key={a.id}>
-                  <Link href={`/areas/${a.id}`} className="flex min-h-16 items-center gap-3 px-4 py-2 active:bg-sage-soft/60">
+                  <Link href={`/areas/${a.id}`} className="flex min-h-16 items-center gap-3 px-4 py-2 active:bg-accent-soft/60">
                     <span className="text-2xl">{a.icon ?? "•"}</span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-medium">{a.name}</span>

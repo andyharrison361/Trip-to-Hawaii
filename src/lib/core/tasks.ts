@@ -10,9 +10,13 @@ import { NotFoundError, ValidationError, loadSnapshot, type Ctx } from "./contex
 
 const uuid = z.string().uuid();
 
-export const taskInputSchema = z.object({
+export const taskInputSchema = z
+  .object({
+  kind: z.enum(["task", "chore", "event"]).optional().default("task"),
   title: z.string().trim().min(1, "Give it a title").max(200),
   notes: z.string().max(5000).optional().default(""),
+  location: z.string().trim().max(200).optional().default(""),
+  kidIds: z.array(uuid).max(20).optional().default([]),
   areaId: uuid.nullable().optional().default(null),
   assigneeId: uuid.nullable().optional(),
   dueDate: z
@@ -23,6 +27,12 @@ export const taskInputSchema = z.object({
     .refine((v) => v == null || v === "" || isValidISODate(v), "Invalid date")
     .transform((v) => (v ? v : null)),
   dueTime: z
+    .string()
+    .nullable()
+    .optional()
+    .default(null)
+    .transform((v) => normalizeTime(v)),
+  endTime: z
     .string()
     .nullable()
     .optional()
@@ -43,7 +53,15 @@ export const taskInputSchema = z.object({
     .optional()
     .default(null)
     .transform((v) => normalizeTime(v)),
-});
+  })
+  .refine((v) => v.kind !== "event" || v.dueDate != null, { message: "Events need a date" })
+  .refine((v) => !v.endTime || !v.dueTime || v.endTime >= v.dueTime, { message: "The end time is before the start time" })
+  // Only events have an end time; a recurrence counted from completion makes no sense for them.
+  .transform((v) => ({
+    ...v,
+    endTime: v.kind === "event" && v.dueTime ? v.endTime : null,
+    recurrenceMode: v.kind === "event" ? ("fixed" as const) : v.recurrenceMode,
+  }));
 
 export type TaskInput = z.input<typeof taskInputSchema>;
 
@@ -92,12 +110,16 @@ export async function createTask(ctx: Ctx, input: TaskInput): Promise<TaskRow> {
       id,
       household_id: ctx.householdId,
       area_id: v.areaId,
+      kind: v.kind,
       title: v.title,
       notes: v.notes,
+      location: v.location,
+      kid_ids: v.kidIds,
       assignee_id: assigneeId,
       created_by: ctx.userId,
       due_date: v.dueDate,
       due_time: v.dueTime,
+      end_time: v.endTime,
       remind_days_before: v.remindDaysBefore,
       reminder_time: v.reminderTime,
       recurrence: v.recurrence,
@@ -118,11 +140,15 @@ export async function updateTask(ctx: Ctx, id: string, input: TaskInput): Promis
     .from("tasks")
     .update({
       area_id: v.areaId,
+      kind: v.kind,
       title: v.title,
       notes: v.notes,
+      location: v.location,
+      kid_ids: v.kidIds,
       assignee_id: v.assigneeId === undefined ? existing.assignee_id : v.assigneeId,
       due_date: v.dueDate,
       due_time: v.dueTime,
+      end_time: v.endTime,
       remind_days_before: v.remindDaysBefore,
       reminder_time: v.reminderTime,
       recurrence: v.recurrence,
@@ -157,12 +183,15 @@ export async function completeTask(
     .eq("id", id)
     .eq("household_id", ctx.householdId)
     .eq("status", "open")
+    .neq("kind", "event")
     .select(TASK_COLUMNS)
     .maybeSingle();
   if (error) throw error;
   if (!data) {
     // Already completed (or missing): report the current state without side effects.
-    return { task: await getTask(ctx, id), next: null };
+    const current = await getTask(ctx, id);
+    if (current.kind === "event") throw new ValidationError("Events don't need checking off");
+    return { task: current, next: null };
   }
   const task = data as TaskRow;
   if (!task.recurrence) return { task, next: null };
@@ -180,12 +209,16 @@ export async function completeTask(
     .insert({
       household_id: task.household_id,
       area_id: task.area_id,
+      kind: task.kind,
       title: task.title,
       notes: task.notes,
+      location: task.location,
+      kid_ids: task.kid_ids,
       assignee_id: task.assignee_id,
       created_by: task.created_by,
       due_date: nextDate,
       due_time: task.due_time,
+      end_time: task.end_time,
       remind_days_before: task.remind_days_before,
       reminder_time: task.reminder_time,
       recurrence: task.recurrence,
@@ -234,10 +267,13 @@ export async function quickAdd(ctx: Ctx, text: string, overrides: Partial<TaskIn
     currentUserId: ctx.userId,
     now: snap.now,
     members: snap.members.filter((m) => m.id).map((m) => ({ id: m.id!, name: m.name })),
+    kids: snap.kids.map((k) => ({ id: k.id, name: k.name })),
     areas: snap.areas.map((a) => ({ id: a.id, name: a.name, ownerId: a.owner_id, keywords: keywordsFor(a.template_key) })),
   });
   return createTask(ctx, {
+    kind: draft.kind,
     title: draft.title || text.trim(),
+    kidIds: draft.kidIds,
     areaId: draft.areaId,
     assigneeId: draft.assigneeId,
     dueDate: draft.dueDate,
@@ -305,11 +341,14 @@ export async function listOpenTasks(
   ctx: Ctx,
   opts: { assigneeId?: string; areaId?: string; dueOnOrBefore?: ISODate; dueAfter?: ISODate; noDate?: boolean; limit?: number } = {},
 ): Promise<TaskRow[]> {
+  const today = nowInTimeZone(ctx.timezone).date;
   let q = ctx.db
     .from("tasks")
     .select(TASK_COLUMNS)
     .eq("household_id", ctx.householdId)
-    .eq("status", "open");
+    .eq("status", "open")
+    // Events are never checked off: once a one-off event has passed, it's no longer "open".
+    .or(`kind.neq.event,due_date.gte.${today},recurrence.not.is.null`);
   if (opts.assigneeId) q = q.eq("assignee_id", opts.assigneeId);
   if (opts.areaId) q = q.eq("area_id", opts.areaId);
   if (opts.noDate) q = q.is("due_date", null);
@@ -321,6 +360,26 @@ export async function listOpenTasks(
     .order("created_at", { ascending: true });
   if (opts.limit) q = q.limit(opts.limit);
   const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []) as TaskRow[];
+}
+
+/**
+ * Everything the planner needs for a date range: items dated in the range
+ * (open or done), plus open repeating items that started earlier, whose later
+ * occurrences may fall in the range (see lib/planner.ts).
+ */
+export async function listPlannerRows(ctx: Ctx, from: ISODate, to: ISODate): Promise<TaskRow[]> {
+  if (!isValidISODate(from) || !isValidISODate(to)) throw new ValidationError("Invalid date range");
+  const { data, error } = await ctx.db
+    .from("tasks")
+    .select(TASK_COLUMNS)
+    .eq("household_id", ctx.householdId)
+    .neq("status", "skipped")
+    .or(`and(due_date.gte.${from},due_date.lte.${to}),and(status.eq.open,recurrence.not.is.null,due_date.lte.${to})`)
+    .order("due_date", { ascending: true })
+    .order("due_time", { ascending: true, nullsFirst: true })
+    .limit(1000);
   if (error) throw error;
   return (data ?? []) as TaskRow[];
 }

@@ -5,7 +5,7 @@ import { listApiTokens } from "@/lib/core/api-tokens";
 import { signOutAction } from "@/app/actions";
 import { Avatar, Card, PageHeader, PageSkeleton, SectionTitle, buttonClass } from "@/components/ui";
 import { ChevronRightIcon } from "@/components/icons";
-import { InviteCard, NameField, HouseholdNameField, TokensCard } from "./settings-forms";
+import { InviteCard, KidsCard, NameField, HouseholdNameField, TokensCard } from "./settings-forms";
 
 export const metadata = { title: "Settings" };
 
@@ -50,8 +50,11 @@ async function Settings() {
         {pending && <InviteCard inviteeName={pending.firstName === "Partner" ? "" : pending.firstName} />}
       </Card>
 
+      <SectionTitle>Kids</SectionTitle>
+      <KidsCard kids={snap.kids.map((k) => ({ id: k.id, name: k.name, color: k.color }))} />
+
       <SectionTitle>On your iPhone</SectionTitle>
-      <Link href="/install" className="flex min-h-14 items-center justify-between rounded-3xl bg-card px-4 ring-1 ring-line active:bg-sage-soft/60">
+      <Link href="/install" className="flex min-h-14 items-center justify-between rounded-3xl bg-card px-4 ring-1 ring-line active:bg-accent-soft/60">
         Add to Home Screen
         <ChevronRightIcon className="h-5 w-5 text-muted" />
       </Link>

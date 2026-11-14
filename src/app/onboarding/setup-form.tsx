@@ -9,6 +9,7 @@ export function SetupForm({ initialName }: { initialName: string }) {
   const [myName, setMyName] = useState(initialName);
   const [partnerName, setPartnerName] = useState("");
   const [householdName, setHouseholdName] = useState("");
+  const [kids, setKids] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
@@ -19,7 +20,12 @@ export function SetupForm({ initialName }: { initialName: string }) {
       onSubmit={(e) => {
         e.preventDefault();
         startTransition(async () => {
-          const res = await setupHouseholdAction({ myName, partnerName, householdName });
+          const res = await setupHouseholdAction({
+            myName,
+            partnerName,
+            householdName,
+            kidNames: kids.split(/[,\n]|\band\b/i).map((k) => k.trim()).filter(Boolean),
+          });
           if (!res.ok) return setError(res.error);
           router.push(`/onboarding/invite?t=${encodeURIComponent(res.data)}`);
         });
@@ -31,13 +37,16 @@ export function SetupForm({ initialName }: { initialName: string }) {
       <Field label="Your partner's first name">
         <input value={partnerName} onChange={(e) => setPartnerName(e.target.value)} className={inputClass} required />
       </Field>
-      <Field label="Household name" hint="Just a label, e.g. “The Harrisons”.">
+      <Field label="Household name" hint="Just a label, e.g. “The Smiths”.">
         <input
           value={householdName}
           onChange={(e) => setHouseholdName(e.target.value)}
           placeholder={myName ? `${myName} & ${partnerName || "…"}` : "Our home"}
           className={inputClass}
         />
+      </Field>
+      <Field label="Kids' first names (optional)" hint="Separate with commas. Each gets a color in the planner. You can add or change them later.">
+        <input value={kids} onChange={(e) => setKids(e.target.value)} placeholder="Emma, Jake" className={inputClass} />
       </Field>
       <ErrorText>{error}</ErrorText>
       <Button type="submit" className="w-full" disabled={pending}>

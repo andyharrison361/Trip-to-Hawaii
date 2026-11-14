@@ -8,7 +8,10 @@ import { requireHousehold } from "@/lib/session";
 export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <ToastProvider>
-      <div className="mx-auto max-w-xl px-4 pb-36">{children}</div>
+      {/* Planner pages use the full width on a computer; the (page) group narrows forms and lists. */}
+      <div className="lg:pl-60">
+        <div className="mx-auto max-w-xl px-4 pb-36 lg:max-w-6xl lg:px-10 lg:pb-16">{children}</div>
+      </div>
       <Suspense fallback={<BottomNavView pathname={null} />}>
         <BottomNav />
       </Suspense>
@@ -26,6 +29,7 @@ async function QuickAddLoader() {
       currentUserId={ctx.userId}
       timezone={snap.household.timezone}
       members={snap.members.map((m) => ({ id: m.id, firstName: m.firstName, pending: m.pending }))}
+      kids={snap.kids.map((k) => ({ id: k.id, name: k.name, color: k.color }))}
       areas={snap.areas.map((a) => ({
         id: a.id,
         name: a.name,

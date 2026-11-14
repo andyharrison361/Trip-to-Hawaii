@@ -5,9 +5,16 @@ import { useState, useTransition } from "react";
 import { completeTaskAction, deleteTaskAction, reopenTaskAction, updateTaskAction } from "@/app/actions";
 import { describeRecurrence, parseRecurrence, upcomingOccurrences, type RecurrenceMode } from "@/lib/recurrence";
 import { formatShortDate, toUTCDate } from "@/lib/dates";
-import type { TaskRow } from "@/lib/types";
+import { kidColor } from "@/lib/colors";
+import type { ItemKind, TaskRow } from "@/lib/types";
 import { useToast } from "@/components/toast";
-import { Button, ErrorText, Field, cx, inputClass } from "@/components/ui";
+import { Button, ErrorText, Field, cx, inputClass, type KidTag } from "@/components/ui";
+
+const KIND_LABELS: Record<ItemKind, { label: string; hint: string }> = {
+  event: { label: "Event", hint: "Happens at a time: practices, appointments, visits." },
+  task: { label: "Task", hint: "A to-do to check off, like paying a bill." },
+  chore: { label: "Chore", hint: "A household routine, like trash night or laundry." },
+};
 
 type Person = { id: string | null; firstName: string; pending?: boolean };
 const PENDING = "__pending__";
@@ -35,19 +42,25 @@ export function TaskForm({
   currentUserId,
   areas,
   people,
+  kids,
 }: {
   task: TaskRow;
   today: string;
   currentUserId: string;
   areas: { id: string; name: string; icon: string | null; ownerId: string | null }[];
   people: Person[];
+  kids: KidTag[];
 }) {
   const router = useRouter();
   const toast = useToast();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
+  const [kind, setKind] = useState<ItemKind>(task.kind);
   const [title, setTitle] = useState(task.title);
+  const [endTime, setEndTime] = useState(task.end_time?.slice(0, 5) ?? "");
+  const [location, setLocation] = useState(task.location);
+  const [kidIds, setKidIds] = useState<string[]>(task.kid_ids);
   const [areaId, setAreaId] = useState(task.area_id ?? "");
   const [assignee, setAssignee] = useState(task.assignee_id ?? PENDING);
   const [dueDate, setDueDate] = useState(task.due_date ?? "");
@@ -70,14 +83,18 @@ export function TaskForm({
     setError(null);
     startTransition(async () => {
       const res = await updateTaskAction(task.id, {
+        kind,
         title,
         notes,
+        location: kind === "event" ? location : "",
+        kidIds,
+        endTime: kind === "event" ? endTime || null : null,
         areaId: areaId || null,
         assigneeId: assignee === PENDING ? null : assignee,
         dueDate: dueDate || null,
         dueTime: dueTime || null,
         recurrence: rule || null,
-        recurrenceMode: mode,
+        recurrenceMode: kind === "event" ? "fixed" : mode,
         remindDaysBefore: task.remind_days_before,
         reminderTime: task.reminder_time,
       });
@@ -89,9 +106,53 @@ export function TaskForm({
 
   return (
     <form onSubmit={save} className="mt-5 space-y-5">
+      <div>
+        <div className="grid grid-cols-3 gap-1 rounded-2xl bg-canvas p-1 ring-1 ring-line" role="radiogroup" aria-label="Kind">
+          {(Object.keys(KIND_LABELS) as ItemKind[]).map((k) => (
+            <button
+              key={k}
+              type="button"
+              role="radio"
+              aria-checked={kind === k}
+              onClick={() => setKind(k)}
+              className={cx("min-h-11 rounded-xl text-[0.95rem]", kind === k ? "bg-card font-medium shadow-sm ring-1 ring-line" : "text-muted")}
+            >
+              {KIND_LABELS[k].label}
+            </button>
+          ))}
+        </div>
+        <p className="mt-1.5 px-1 text-sm text-muted">{KIND_LABELS[kind].hint}</p>
+      </div>
+
       <Field label="What">
         <input value={title} onChange={(e) => setTitle(e.target.value)} className={inputClass} required />
       </Field>
+
+      {kids.length > 0 && (
+        <div>
+          <span className="mb-1.5 block px-1 text-sm font-medium text-muted">For</span>
+          <div className="flex flex-wrap gap-2">
+            {kids.map((k) => {
+              const on = kidIds.includes(k.id);
+              return (
+                <button
+                  key={k.id}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => setKidIds((ids) => (on ? ids.filter((id) => id !== k.id) : [...ids, k.id]))}
+                  className={cx(
+                    "inline-flex min-h-10 items-center gap-1.5 rounded-full px-4 text-[0.95rem] ring-1",
+                    on ? cx(kidColor(k.color).soft, "ring-transparent font-medium") : "bg-canvas ring-line text-muted",
+                  )}
+                >
+                  <span className={cx("h-2.5 w-2.5 rounded-full", kidColor(k.color).dot)} />
+                  {k.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <Field label="Area">
@@ -112,7 +173,7 @@ export function TaskForm({
             ))}
           </select>
         </Field>
-        <Field label="Who">
+        <Field label={kind === "event" ? "Who's handling it" : "Who"}>
           <select value={assignee} onChange={(e) => setAssignee(e.target.value)} className={inputClass}>
             {people.map((p) => (
               <option key={p.id ?? PENDING} value={p.id ?? PENDING}>
@@ -124,13 +185,37 @@ export function TaskForm({
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Due">
-          <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputClass} />
+        <Field label={kind === "event" ? "Date" : "Due"}>
+          <input
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+            className={inputClass}
+            required={kind === "event"}
+          />
         </Field>
-        <Field label="Time (optional)">
+        <Field label={kind === "event" ? "Starts (optional)" : "Time (optional)"}>
           <input type="time" value={dueTime} onChange={(e) => setDueTime(e.target.value)} className={inputClass} />
         </Field>
       </div>
+
+      {kind === "event" && (
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Ends (optional)">
+            <input
+              type="time"
+              value={endTime}
+              min={dueTime || undefined}
+              disabled={!dueTime}
+              onChange={(e) => setEndTime(e.target.value)}
+              className={cx(inputClass, !dueTime && "opacity-50")}
+            />
+          </Field>
+          <Field label="Where (optional)">
+            <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Riverside Park" className={inputClass} />
+          </Field>
+        </div>
+      )}
 
       <Field label="Repeats">
         <select
@@ -172,7 +257,11 @@ export function TaskForm({
         </Field>
       )}
 
-      {rule && (
+      {rule && kind === "event" && (
+        <p className="px-1 text-sm text-muted">Shows on the planner every time: {preview.map(formatShortDate).join(", ")}…</p>
+      )}
+
+      {rule && kind !== "event" && (
         <div className="space-y-2">
           <div className="grid grid-cols-2 gap-2 rounded-2xl bg-canvas p-1 ring-1 ring-line">
             {(
@@ -210,7 +299,7 @@ export function TaskForm({
       </Button>
 
       <div className="flex gap-2">
-        {task.status === "open" ? (
+        {task.kind === "event" ? null : task.status === "open" ? (
           <Button
             type="button"
             variant="secondary"
@@ -250,7 +339,14 @@ export function TaskForm({
           className="flex-1"
           disabled={pending}
           onClick={() => {
-            if (!confirm(task.recurrence ? "Delete this task? It won't repeat anymore." : "Delete this task?")) return;
+            const noun = KIND_LABELS[task.kind].label.toLowerCase();
+            const message =
+              task.kind === "event" && task.recurrence
+                ? "Delete this event? Every date in the series goes with it."
+                : task.recurrence
+                  ? `Delete this ${noun}? It won't repeat anymore.`
+                  : `Delete this ${noun}?`;
+            if (!confirm(message)) return;
             startTransition(async () => {
               const res = await deleteTaskAction(task.id);
               if (!res.ok) return setError(res.error);

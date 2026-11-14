@@ -39,7 +39,8 @@ async function Areas() {
           icon: a.icon,
           category: a.category,
           minimumStandard: a.minimumStandard,
-          suggested: Boolean(a.suggested),
+          // Families with kids start with the Kids areas picked too.
+          suggested: Boolean(a.suggested) || (a.category === "kids" && snap.kids.length > 0),
           suggestedOwner: a.suggestedOwner ?? "me",
         }))}
       />

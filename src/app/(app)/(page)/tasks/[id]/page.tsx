@@ -7,7 +7,9 @@ import { formatRelativeDate, nowInTimeZone } from "@/lib/dates";
 import { PageHeader, PageSkeleton } from "@/components/ui";
 import { TaskForm } from "./task-form";
 
-export const metadata = { title: "Task" };
+export const metadata = { title: "Details" };
+
+const TITLES = { event: "Event", task: "Task", chore: "Chore" } as const;
 
 export default function TaskPage({ params }: PageProps<"/tasks/[id]">) {
   return (
@@ -30,7 +32,7 @@ async function TaskDetail({ params }: { params: PageProps<"/tasks/[id]">["params
 
   return (
     <>
-      <PageHeader back={area ? `/areas/${area.id}` : "/"} title={task.status === "done" ? "Done ✓" : "Task"} />
+      <PageHeader back={area ? `/areas/${area.id}` : "/"} title={task.status === "done" ? "Done ✓" : TITLES[task.kind]} />
       {task.status === "done" && task.completed_at && (
         <p className="mt-1 text-muted">
           Completed by {completedBy ?? "someone"}{" "}
@@ -43,6 +45,7 @@ async function TaskDetail({ params }: { params: PageProps<"/tasks/[id]">["params
         currentUserId={ctx.userId}
         areas={snap.areas.map((a) => ({ id: a.id, name: a.name, icon: a.icon, ownerId: a.owner_id }))}
         people={snap.members.map((m) => ({ id: m.id, firstName: m.firstName, pending: m.pending }))}
+        kids={snap.kids.map((k) => ({ id: k.id, name: k.name, color: k.color }))}
       />
     </>
   );

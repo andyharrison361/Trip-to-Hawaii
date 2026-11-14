@@ -26,7 +26,7 @@ async function Invite({ params }: { params: PageProps<"/invite/[token]">["params
       <div className="space-y-6">
         <h1 className="font-display text-3xl font-semibold tracking-tight">You&apos;ve been invited 💛</h1>
         <p className="text-lg text-muted">
-          Join your partner&apos;s household on Life Partner, so you can share ownership of everything that keeps your life running.
+          Join your partner&apos;s household on Same Page: one shared planner for appointments, kids&apos; schedules, chores and everything that keeps your life running.
         </p>
         <Link href={`/login?next=${encodeURIComponent(`/invite/${token}`)}`} className={buttonClass("primary", "w-full")}>
           Sign in to join
